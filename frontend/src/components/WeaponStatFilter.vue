@@ -1,6 +1,6 @@
 <script setup>
 import { useRouter, useRoute } from 'vue-router'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -70,15 +70,65 @@ const firingModes = [
   { key: 'full', label: 'Full' }
 ]
 
+// Ammunition type options
+const ammunitionTypes = [
+  '5.45x39mm',
+  '5.56x45mm',
+  '7.62x39mm',
+  '7.62x51mm',
+  '7.62x54mmR',
+  '9x19mm',
+  '9x21mm',
+  '9x39mm',
+  '12.7x55mm',
+  '4.6x30mm',
+  '5.7x28mm',
+  '.366 TKM',
+  '.45 ACP',
+  '12x70mm',
+  '20x70mm',
+  '23x75mm',
+  '9x18mm',
+  '9x33mmR',
+  '40x46mm',
+  '30x29mm',
+]
+
 // Reactive firing mode state from URL query (excluded modes)
 const excludedFiringModes = computed({
   get: () => {
     const modes = route.query.excludedFiringModes
-    return modes ? modes.split(',') : [] // Default to none excluded (all selected)
+    return modes ? modes.split(',') : []
   },
   set: (value) => {
     updateExcludedFiringModes(value)
   }
+})
+
+// Reactive ammunition types state from URL query
+const selectedAmmunitionTypes = computed({
+  get: () => {
+    const types = route.query.ammunitionTypes
+    return types ? types.split(',') : []
+  },
+  set: (value) => {
+    updateAmmunitionTypes(value)
+  }
+})
+
+// Popover state
+const isPopoverOpen = ref(false)
+const searchQuery = ref('')
+
+// Filtered ammunition types based on search query
+const filteredAmmunitionTypes = computed(() => {
+  if (!searchQuery.value) {
+    return ammunitionTypes.filter(type => !selectedAmmunitionTypes.value.includes(type))
+  }
+  return ammunitionTypes.filter(type => 
+    !selectedAmmunitionTypes.value.includes(type) &&
+    type.toLowerCase().includes(searchQuery.value.toLowerCase())
+  )
 })
 
 const updateFilter = (key, value) => {
@@ -98,25 +148,59 @@ const updateExcludedFiringModes = (modes) => {
   })
 }
 
+const updateAmmunitionTypes = (types) => {
+  router.push({
+    path: route.path,
+    query: { 
+      ...route.query, 
+      ammunitionTypes: types.length > 0 ? types.join(',') : undefined 
+    },
+  })
+}
+
 const toggleFiringMode = (mode) => {
   const currentExcluded = [...excludedFiringModes.value]
   const index = currentExcluded.indexOf(mode)
   
   if (index > -1) {
-    // Remove from excluded list (checkbox becomes checked)
     currentExcluded.splice(index, 1)
   } else {
-    // Add to excluded list (checkbox becomes unchecked)
     currentExcluded.push(mode)
   }
   
   excludedFiringModes.value = currentExcluded
 }
+
+const addAmmunitionType = (type) => {
+  const currentTypes = [...selectedAmmunitionTypes.value]
+  if (!currentTypes.includes(type)) {
+    currentTypes.push(type)
+    selectedAmmunitionTypes.value = currentTypes
+  }
+  searchQuery.value = ''
+  isPopoverOpen.value = false
+}
+
+const removeAmmunitionType = (type) => {
+  const currentTypes = selectedAmmunitionTypes.value.filter(t => t !== type)
+  selectedAmmunitionTypes.value = currentTypes
+}
+
+const handleInputFocus = () => {
+  isPopoverOpen.value = true
+}
+
+const handleInputBlur = () => {
+  // Delay hiding popover to allow clicks on items
+  setTimeout(() => {
+    isPopoverOpen.value = false
+  }, 200)
+}
 </script>
 
 <template>
   <div class="box" box-="round" shear-="top">
-    <span class="header">Weapon stats filter</span>
+    <span class="header" is-="badge" variant-="red">stat-filter</span>
     <div class="filters">
       <ul marker-="tree">
         <li v-for="config in filterConfigs" :key="config.key" class="filterRow">
@@ -156,6 +240,40 @@ const toggleFiringMode = (mode) => {
           </ul>
         </div>
         <hr class="separator">
+        <div class="ammunitionFilter">
+          <label>Ammunition:</label>
+          <div class="ammunitionInputWrapper">
+            <input
+              v-model="searchQuery"
+              @focus="handleInputFocus"
+              @blur="handleInputBlur"
+              placeholder="Search ammunition type..."
+              size-="small"
+              type="text"
+            />
+            <div v-if="isPopoverOpen && filteredAmmunitionTypes.length > 0" class="ammunitionPopover">
+              <div
+                v-for="ammo in filteredAmmunitionTypes"
+                :key="ammo"
+                class="ammunitionItem"
+                @mousedown.prevent="addAmmunitionType(ammo)"
+              >
+                {{ ammo }}
+              </div>
+            </div>
+          </div>
+          <div v-if="selectedAmmunitionTypes.length > 0" class="selectedAmmunition">
+            <span
+              v-for="ammo in selectedAmmunitionTypes"
+              :key="ammo"
+              class="ammunitionTag"
+              @click="removeAmmunitionType(ammo)"
+            >
+              {{ ammo }}
+            </span>
+          </div>
+        </div>
+        <hr class="separator">
         <div class="priceFilter">
           <label>Price:</label>
           <input
@@ -184,81 +302,91 @@ const toggleFiringMode = (mode) => {
 <style scoped>
 .filterRow {
   display: flex;
-  align-items: center;
   gap: 1ch;
 }
 
 .filterTitle {
-  white-space: nowrap;
-  width: 18ch;
+  width: 19ch;
   flex-shrink: 0;
-}
-
-.header {
-  background-color: var(--background0);
-  padding: 0 1ch;
-}
-
-input {
-  flex: 1;
-  min-width: 3ch;
-  padding: 0.25ch;
-  text-align: center;
-}
-
-ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-li {
-  margin: 0;
 }
 
 .priceFilter {
   display: flex;
-  align-items: center;
   gap: 1ch;
-}
-
-.priceFilter input {
-  flex: 1;
-  min-width: 5ch;
-  padding: 0.25ch;
-  text-align: center;
-}
-
-.separator {
-  border: none;
-  height: 1px;
-  background-color: #666;
-  margin: 0.8ch 0;
-  width: 100%;
-}
-
-.firingModes .header {
-  background-color: var(--background0);
-  padding: 0 1ch;
 }
 
 .firingModeRow {
   display: flex;
-  align-items: center;
   gap: 1ch;
 }
 
 .firingModeRow .filterTitle {
-  white-space: nowrap;
   width: 6ch;
   flex-shrink: 0;
 }
 
-.firingModeRow input {
+input {
+  flex: 1;
+  min-width: 4ch;
+}
+
+.separator {
+  background-color: var(--fg);
+  border: none;
+  height: 1px;
+  margin: 0.75ch;
+}
+
+.ammunitionFilter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5ch;
+}
+
+.ammunitionInputWrapper {
+  position: relative;
+}
+
+.ammunitionPopover {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: var(--background1);
+  border: 1px solid var(--fg);
+  border-radius: 4px;
+  max-height: 20ch;
+  overflow-y: auto;
+  z-index: 100;
+  margin-top: 0.25ch;
+}
+
+.ammunitionItem {
+  padding: 0.5ch 1ch;
   cursor: pointer;
-  margin: 0;
-  vertical-align: middle;
-  height: 1em;
-  width: 1em;
+}
+
+.ammunitionItem:hover {
+  background-color: var(--background0);
+}
+
+.selectedAmmunition {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5ch;
+}
+
+.ammunitionTag {
+  display: inline-block;
+  padding: 0.25ch 0.75ch;
+  background-color: var(--blue);
+  color: var(--background0);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9em;
+}
+
+.ammunitionTag:hover {
+  background-color: var(--red);
 }
 </style>
