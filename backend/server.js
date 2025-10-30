@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
+import { queryWeapons } from "./filters.js";
 
 dotenv.config();
 
@@ -45,6 +46,26 @@ app.get("/api/weapons", async (req, res) => {
         console.error(e);
         res.status(500).json({ error: "server_error", detail: String(e) });
     }
+});
+
+// Search with filters, pagination, and optional sorting
+app.post("/api/weapons/search", async (req, res) => {
+  try {
+    const sb = sbAsUser(req);
+    const { page, perPage, sortBy, sortDir, filters } = req.body || {};
+    const { data, count, error } = await queryWeapons(sb, {
+      page,
+      perPage,
+      sortBy,
+      sortDir,
+      filters,
+    });
+    if (error) return res.status(400).json({ error: error.message });
+    res.json({ data, total: count, page: Number(page) || 1, perPage: Number(perPage) || 20 });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "server_error", detail: String(e) });
+  }
 });
 
 app.listen(PORT, () => console.log(`API listening on http://localhost:${PORT}`));
