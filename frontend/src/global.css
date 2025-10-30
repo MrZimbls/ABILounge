@@ -12,5 +12,6 @@
 @import '@webtui/css/components/checkbox.css';
 @import '@webtui/css/components/input.css';
 @import '@webtui/css/components/separator.css';
+@import '@webtui/css/components/switch.css';
 
 @import '@webtui/theme-everforest';

@@ -196,6 +196,8 @@ const handleInputBlur = () => {
     isPopoverOpen.value = false
   }, 200)
 }
+
+// (reverted) no global listeners needed
 </script>
 
 <template>
