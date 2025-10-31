@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+// No imports needed
 
 // Map frontend filter keys to database column names
 const NUMERIC_FILTER_MAP = {
@@ -28,6 +28,8 @@ const WEAPON_TYPE_MAP = {
   "light-machine-gun": "Light Machine Gun",
   pistol: "Pistol",
 };
+
+// Removed ammunition normalization; we filter directly by numeric IDs
 
 function getColumnForSort(sortBy) {
   if (!sortBy) return null;
@@ -87,12 +89,17 @@ export async function queryWeapons(sb, args) {
     }
   }
 
-  // Ammunition filtering
-  const ammunitionTypes = Array.isArray(filters.ammunitionTypes)
+  // Ammunition filtering (use ammunitionTypes as list of IDs)
+  const ammunitionIds = Array.isArray(filters.ammunitionTypes)
     ? filters.ammunitionTypes
     : [];
-  if (ammunitionTypes.length > 0) {
-    query = query.in("w_ammunition", ammunitionTypes);
+  if (ammunitionIds.length > 0) {
+    const ids = ammunitionIds
+      .map((v) => Number(v))
+      .filter((n) => Number.isFinite(n));
+    if (ids.length > 0) {
+      query = query.in("w_ammunition", ids);
+    }
   }
 
   // Firing mode filtering (column is comma-separated text; use ilike ORs)

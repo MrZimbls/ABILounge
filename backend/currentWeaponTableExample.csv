@@ -1,0 +1,2 @@
+w_id,w_name,w_type,w_description,w_vrecoil,w_hrecoil,w_ergonomics,w_stability,w_accuracy,w_hipfire,w_range,w_velocity,w_firingmode,w_rpm,w_ammunition,w_power,w_extra,w_price
+1,AKM,Assault Rifle,blub,50,47,44,50,38,71,54,715,"semi,full",600,7.62x39,medium,,22353

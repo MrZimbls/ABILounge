@@ -95,7 +95,16 @@ const clearSelection = () => {
             type="text"
             :readonly="!!selectedSortStat"
           />
-          <button v-if="selectedSortStat" size-="small" @click="clearSelection">Clear</button>
+          <button
+            class="clearBtn"
+            size-="small"
+            :class="{ disabled: !selectedSortStat }"
+            @click="selectedSortStat && clearSelection()"
+            aria-label="Clear selected sort stat"
+            title="Clear"
+          >
+            <span class="nf icon" aria-hidden="true"></span>
+          </button>
           <div v-if="!selectedSortStat && isPopoverOpen && filteredStatOptions.length > 0" class="popover">
             <div
               v-for="opt in filteredStatOptions"
@@ -109,9 +118,9 @@ const clearSelection = () => {
         </div>
       </div>
       <div class="orderPicker">
-        <label>Ascending</label>
-        <input type="checkbox" is-="switch" bar-="thin" :checked="isAscending" @change="isAscending = $event.target.checked" />
-        <label>Descending</label>
+        <label :class="{ active: isAscending }">Ascending</label>
+        <input type="checkbox" is-="switch" bar-="thin" :checked="!isAscending" @change="isAscending = !$event.target.checked" />
+        <label :class="{ active: !isAscending }">Descending</label>
       </div>
     </div>
   </div>
@@ -166,8 +175,57 @@ const clearSelection = () => {
   gap: 1ch;
 }
 
+.orderPicker label {
+  color: var(--gray1);
+}
+
+.orderPicker label.active {
+  color: var(--foreground0);
+  font-weight: 700;
+}
+
 input[is-='switch'] {
   --switch-thumb-color: var(--foreground0);
   --switch-track-color: var(--background1);
+}
+
+/* Keep space for the clear icon so input text doesn't shift */
+.inputWrapper input[type='text'] {
+  padding-right: 2.25em;
+}
+
+.clearBtn {
+  position: absolute;
+  right: 0.25em;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  padding: 0.25em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--foreground0);
+  cursor: pointer;
+}
+
+.clearBtn .nf {
+  font-size: 1em;
+}
+
+.clearBtn .icon::before {
+  /* Trash can icon (Font Awesome) */
+  content: "\f014";
+  font-family: "Symbols Nerd Font";
+}
+
+.clearBtn:hover {
+  color: var(--gray0);
+}
+
+.clearBtn.disabled {
+  color: var(--gray1);
+  cursor: default;
+  pointer-events: none;
 }
 </style>

@@ -48,6 +48,19 @@ app.get("/api/weapons", async (req, res) => {
     }
 });
 
+// List ammunition (ids and calibers)
+app.get("/api/ammunition", async (req, res) => {
+  try {
+    const sb = sbAsUser(req);
+    const { data, error } = await sb.from("t_ammunition").select("a_id, a_caliber");
+    if (error) return res.status(400).json({ error: error.message });
+    res.json({ data });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "server_error", detail: String(e) });
+  }
+});
+
 // Search with filters, pagination, and optional sorting
 app.post("/api/weapons/search", async (req, res) => {
   try {

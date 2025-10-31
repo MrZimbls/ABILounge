@@ -14,4 +14,11 @@
 @import '@webtui/css/components/separator.css';
 @import '@webtui/css/components/switch.css';
 
+/* Plugins */
 @import '@webtui/theme-everforest';
+@import '@webtui/plugin-nf';
+
+@layer components {
+  /* Make sure nf icons render even if base font stack is overridden elsewhere */
+  .nf { font-family: "Symbols Nerd Font"; font-style: normal; line-height: 1; }
+}
