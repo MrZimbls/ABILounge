@@ -4,7 +4,9 @@ import { computed } from 'vue'
 const props = defineProps({
   weaponName: { type: String, required: true },
   stats: { type: Object, default: () => ({}) },
-  highlightedKeys: { type: Array, default: () => [] }
+  highlightedKeys: { type: Array, default: () => [] },
+  selected: { type: Boolean, default: false },
+  clickable: { type: Boolean, default: false }
 })
 
 // Eagerly import all small weapon icons as URLs; includes placeholder.png
@@ -83,18 +85,21 @@ const prioritizedStats = computed(() => {
 </script>
 
 <template>
-  <div box-="round" shear-="top" class="weaponItem">
+  <div box-="round" shear-="top" :class="['weaponItem', { selected, clickable }]">
     <div class="itemHeader">
-      <span is-="badge" variant-="background0">{{ weaponName }}</span>
+      <span is-="badge" :variant-="selected ? 'green' : 'background0'">{{ weaponName }}</span>
     </div>
     <div class="itemBody">
       <img class="thumb" :src="imageUrl" :alt="weaponName" />
       <div class="summary">
         <div class="statsLine">
           <template v-for="s in prioritizedStats" :key="s.key">
-            <span :class="['stat', s.highlighted ? 'hl' : '']" is-="badge" variant-="background0">
+            <span v-if="s.highlighted" class="stat hl" is-="badge" variant-="background0">
               {{ s.label }}: {{ s.value }}
             </span>
+            <p v-else class="stat statText">
+              {{ s.label }}: {{ s.value }}
+            </p>
           </template>
         </div>
       </div>
@@ -104,12 +109,21 @@ const prioritizedStats = computed(() => {
 
 <style scoped>
 .weaponItem { display: block; }
+.weaponItem.clickable { cursor: pointer; }
+/* Hover background for clickable items */
+.weaponItem.clickable:hover { background-color: var(--background1); }
+/* Use a different background for the selected box */
+.weaponItem.selected { background-color: var(--background2); }
 .itemHeader { display: flex; justify-content: space-between; }
 .itemBody { display: flex; align-items: center; gap: 1ch; }
 .thumb { width: 120px; height: 62px; object-fit: contain; }
 .summary { flex: 1 1 auto; min-width: 0; }
-.statsLine { display: flex; gap: 1ch; align-items: center; flex-wrap: wrap; }
+.statsLine { display: flex; gap: 1ch; align-items: center; flex-wrap: wrap; margin-right: 1ch;}
+.stat { color: var(--gray2); }
+.statText { margin: 0; }
 .stat.hl { color: var(--wt-color-success, #8ec07c); outline: 1px solid currentColor; }
+/* Insert a separator between each stat (not before the first) */
+.statsLine > * + *::before { content: '|'; color: var(--gray2); margin: 0 .5ch; }
 </style>
 
 

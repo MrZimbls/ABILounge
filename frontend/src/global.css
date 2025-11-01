@@ -13,6 +13,7 @@
 @import '@webtui/css/components/input.css';
 @import '@webtui/css/components/separator.css';
 @import '@webtui/css/components/switch.css';
+@import '@webtui/css/components/progress.css';
 
 /* Plugins */
 @import '@webtui/theme-everforest';

@@ -40,7 +40,6 @@ const refreshResults = () => { refreshTick.value += 1 }
   display: flex;
   gap: 2ch;
   align-items: stretch;
-  margin-top: 2ch;
 }
 
 .sidebar {
@@ -54,6 +53,7 @@ const refreshResults = () => { refreshTick.value += 1 }
   display: flex;
   gap: 2ch;
   align-items: stretch;
+  margin-top: 2ch;
 }
 
 .typeCol { flex: 1 1 auto; min-width: 0; }
