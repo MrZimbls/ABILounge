@@ -239,6 +239,26 @@ const pagesToShow = computed(() => {
   return result
 })
 
+// Track previous values to detect filter/sort changes (not page changes)
+const prevFilters = ref(JSON.stringify(filters.value))
+const prevSortBy = ref(sortBy.value)
+const prevSortDir = ref(sortDir.value)
+
+watch([filters, sortBy, sortDir], ([newFilters, newSortBy, newSortDir]) => {
+  const filtersChanged = JSON.stringify(newFilters) !== prevFilters.value
+  const sortChanged = newSortBy !== prevSortBy.value || newSortDir !== prevSortDir.value
+  
+  if (filtersChanged || sortChanged) {
+    prevFilters.value = JSON.stringify(newFilters)
+    prevSortBy.value = newSortBy
+    prevSortDir.value = newSortDir
+    
+    if (currentPage.value !== 1) {
+      router.push({ query: { ...route.query, page: '1' } })
+    }
+  }
+}, { immediate: false })
+
 // Refresh when route query (filters/sort/page) or explicit refresh tick changes
 watch([() => route.query, () => props.refreshTick], () => { loadWeapons() }, { immediate: true, deep: true })
 </script>

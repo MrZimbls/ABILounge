@@ -10,7 +10,7 @@ export async function searchWeapons({ page = 1, perPage = 20, sortBy, sortDir = 
 
   if (!res.ok) {
     let message = 'Request failed'
-    try { message = await res.text() } catch {}
+    try { message = await res.text() } catch { message = 'Request failed' }
     throw new Error(message)
   }
 
@@ -26,7 +26,7 @@ export async function listAmmunition({ token } = {}) {
 
   if (!res.ok) {
     let message = 'Request failed'
-    try { message = await res.text() } catch {}
+    try { message = await res.text() } catch { message = 'Request failed' }
     throw new Error(message)
   }
 
