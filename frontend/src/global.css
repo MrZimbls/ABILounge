@@ -14,6 +14,7 @@
 @import '@webtui/css/components/separator.css';
 @import '@webtui/css/components/switch.css';
 @import '@webtui/css/components/progress.css';
+@import '@webtui/css/components/dialog.css';
 
 /* Plugins */
 @import '@webtui/theme-everforest';

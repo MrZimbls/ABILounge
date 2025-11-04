@@ -86,25 +86,30 @@ const allCalibers = computed(() => {
   return Array.from(set).sort((a,b) => a.localeCompare(b))
 })
 
-// Excluded calibers (via popover input)
-const excludedCalibers = ref([])
+// Selected calibers (via popover input)
+const selectedCalibers = ref([])
 const caliberSearch = ref('')
 const popoverOpen = ref(false)
+const caliberFilterMode = ref('exclude') // 'exclude' | 'include'
 
 const filteredCaliberOptions = computed(() => {
   const q = caliberSearch.value.toLowerCase()
-  const excluded = new Set(excludedCalibers.value)
-  return allCalibers.value.filter(name => !excluded.has(name) && (!q || name.toLowerCase().includes(q)))
+  const selected = new Set(selectedCalibers.value)
+  return allCalibers.value.filter(name => !selected.has(name) && (!q || name.toLowerCase().includes(q)))
 })
 
-function addExcludedCaliber(name) {
-  if (!excludedCalibers.value.includes(name)) excludedCalibers.value = [...excludedCalibers.value, name]
+function addSelectedCaliber(name) {
+  if (!selectedCalibers.value.includes(name)) selectedCalibers.value = [...selectedCalibers.value, name]
   caliberSearch.value = ''
   popoverOpen.value = false
 }
 
-function removeExcludedCaliber(name) {
-  excludedCalibers.value = excludedCalibers.value.filter(n => n !== name)
+function removeSelectedCaliber(name) {
+  selectedCalibers.value = selectedCalibers.value.filter(n => n !== name)
+}
+
+function toggleCaliberFilterMode() {
+  caliberFilterMode.value = caliberFilterMode.value === 'exclude' ? 'include' : 'exclude'
 }
 
 function onCaliberFocus() {
@@ -217,8 +222,15 @@ function getNumericFilterValue(key) {
 }
 
 const displayedRows = computed(() => {
-  const excluded = new Set(excludedCalibers.value)
-  let rows = rawRows.value.filter(r => !excluded.has(String(r?.t_ammunition?.a_caliber ?? r?.at_caliber ?? '')))
+  const selected = new Set(selectedCalibers.value)
+  let rows = rawRows.value.filter(r => {
+    const caliber = String(r?.t_ammunition?.a_caliber ?? r?.at_caliber ?? '')
+    if (caliberFilterMode.value === 'exclude') {
+      return !selected.has(caliber)
+    } else {
+      return selected.has(caliber)
+    }
+  })
 
   // Apply numeric filters
   for (const cfg of filterConfigs) {
@@ -325,15 +337,23 @@ onMounted(async () => {
         <hr class="separator" />
 
         <div class="section">
-          <label class="sectionTitle">Exclude calibers</label>
+          <div class="caliberModeRow">
+            <label class="sectionTitle">Calibers</label>
+            <button 
+              @click="toggleCaliberFilterMode" 
+              size-="small" 
+              variant-="blue">
+              {{ caliberFilterMode === 'exclude' ? 'Exclude' : 'Include' }}
+            </button>
+          </div>
           <div class="ammunitionInputWrapper">
             <input
               v-model="caliberSearch"
               @focus="onCaliberFocus"
               @blur="onCaliberBlur"
               placeholder="Search caliber..."
-              size-="small"
               type="text"
+              class="caliberSearchInput"
             />
             <div v-if="popoverOpen" class="ammunitionPopover">
               <div v-if="filteredCaliberOptions.length > 0">
@@ -341,7 +361,7 @@ onMounted(async () => {
                   v-for="name in filteredCaliberOptions"
                   :key="name"
                   class="ammunitionItem"
-                  @mousedown.prevent="addExcludedCaliber(name)"
+                  @mousedown.prevent="addSelectedCaliber(name)"
                 >
                   {{ name }}
                 </div>
@@ -349,12 +369,12 @@ onMounted(async () => {
               <div v-else class="ammunitionItem">No matches</div>
             </div>
           </div>
-          <div v-if="excludedCalibers.length > 0" class="selectedAmmunition">
+          <div v-if="selectedCalibers.length > 0" class="selectedAmmunition">
             <span
-              v-for="name in excludedCalibers"
+              v-for="name in selectedCalibers"
               :key="name"
               class="ammunitionTag"
-              @click="removeExcludedCaliber(name)"
+              @click="removeSelectedCaliber(name)"
             >
               {{ name }}
             </span>
@@ -536,6 +556,19 @@ input.conflict {
 
 .status { padding: 0.75rem; }
 .status.error { color: var(--red); }
+
+.caliberModeRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  gap: 1rem;
+}
+
+.caliberSearchInput {
+  width: 100%;
+  min-width: 20ch;
+}
 </style>
 
 

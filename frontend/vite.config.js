@@ -5,9 +5,10 @@ import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
     vue(),
+    // Vue DevTools only activates in development mode
     vueDevTools(),
   ],
   resolve: {
@@ -23,4 +24,11 @@ export default defineConfig({
       },
     },
   },
-})
+  // Production build configuration
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    sourcemap: false,
+    minify: 'esbuild',
+  },
+}))

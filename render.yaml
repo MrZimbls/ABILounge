@@ -1,0 +1,42 @@
+# Render Blueprint - Infrastructure as Code
+# This file defines your services for deployment on Render
+# 
+# To use this:
+# 1. Go to Render Dashboard > New > Blueprint
+# 2. Connect your GitLab repository
+# 3. Render will automatically detect and use this file
+
+services:
+  # Backend API Service
+  - type: web
+    name: abilounge-backend
+    env: node
+    region: oregon  # Change to your preferred region
+    plan: free  # free, starter, standard, pro
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 8787
+      - key: SUPABASE_URL
+        sync: false  # Set this in Render dashboard after creation
+      - key: SUPABASE_PUBLIC_KEY
+        sync: false  # Set this in Render dashboard after creation
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false  # Set this in Render dashboard after creation
+
+  # Frontend Static Site
+  - type: web
+    name: abilounge-frontend
+    env: static
+    region: oregon  # Change to your preferred region
+    plan: free
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: ./frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false  # Set this to your backend URL after backend is deployed
+        # Example: https://abilounge-backend.onrender.com
+

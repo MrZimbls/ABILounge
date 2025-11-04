@@ -96,4 +96,53 @@ app.post("/api/weapons/search", async (req, res) => {
   }
 });
 
+// Authenticate with demo code
+app.post("/api/auth/demo", async (req, res) => {
+  try {
+    const { code } = req.body || {};
+    
+    if (!code || typeof code !== "string") {
+      return res.status(400).json({ error: "code_required", message: "Demo code is required" });
+    }
+
+    // Use service role to call RPC function
+    const sb = sbAsService();
+    
+    // Call the RPC function to authenticate and update last_use atomically
+    const { data, error } = await sb.rpc("authenticate_demo_code", {
+      code_input: code.trim()
+    });
+
+    if (error) {
+      console.error("RPC error:", error);
+      return res.status(500).json({ 
+        error: "server_error", 
+        message: "Authentication service error",
+        detail: error.message 
+      });
+    }
+
+    // Check if code was found and authenticated
+    if (!data || data.length === 0 || !data[0]) {
+      return res.status(401).json({ 
+        error: "invalid_code", 
+        message: "Invalid or expired demo code" 
+      });
+    }
+
+    const demoCode = data[0];
+
+    // Return success with role information
+    res.json({
+      success: true,
+      role: demoCode.role,
+      code: demoCode.code,
+      last_use: demoCode.last_use,
+    });
+  } catch (e) {
+    console.error("Demo auth error:", e);
+    res.status(500).json({ error: "server_error", detail: String(e) });
+  }
+});
+
 app.listen(PORT, () => console.log(`API listening on http://localhost:${PORT}`));
