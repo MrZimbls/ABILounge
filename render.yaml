@@ -11,7 +11,7 @@ services:
   - type: web
     name: abilounge-backend
     env: node
-    region: oregon  # Change to your preferred region
+    region: frankfurt  # Change to your preferred region
     plan: free  # free, starter, standard, pro
     buildCommand: cd backend && npm install
     startCommand: cd backend && node server.js
