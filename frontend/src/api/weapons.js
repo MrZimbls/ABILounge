@@ -33,4 +33,19 @@ export async function listAmmunition({ token } = {}) {
   return res.json()
 }
 
+export async function listAmmunitionTypes({ token } = {}) {
+  const headers = {}
+  if (token) headers.Authorization = `Bearer ${token}`
+
+  const res = await fetch('/api/ammunition/types', { headers })
+
+  if (!res.ok) {
+    let message = 'Request failed'
+    try { message = await res.text() } catch { message = 'Request failed' }
+    throw new Error(message)
+  }
+
+  return res.json()
+}
+
 

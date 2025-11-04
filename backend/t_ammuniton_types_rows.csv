@@ -1,0 +1,73 @@
+at_id,at_name,at_damage,at_penetration,at_pierce,at_armor_damage,at_velocity,at_wound,at_seller,at_price,at_caliber
+1,5.45x39mm HP,76,15,1,5.2,884,Medium,Vladlen,,9
+2,5.45x39mm PS,0,0,2,7.5,890,Low,Vladlen,0,9
+3,5.45x39mm BP,0,0,4,16.8,890,Low,Vladlen,0,9
+4,5.45x39mm BS,44,52,5,26,830,None,Vladlen,0,9
+5,5.45x39mm PP,0,0,3,11.2,890,Low,Vladlen,0,9
+6,5.45x39mm PRS,0,0,0,0,0,Unknown,nan,0,9
+7,5.45x39mm 7N10M,0,0,0,0,0,Unknown,nan,0,9
+8,5.56x45mm HP Hunting,0,0,0,0,0,Unknown,nan,0,7
+9,5.56x45mm FMJ Hunting,0,0,2,7.1,957,Low,nan,0,7
+10,5.56x45mm M193,0,0,0,0,0,Unknown,nan,0,7
+11,5.56x45mm M855,0,0,0,0,0,Unknown,nan,0,7
+12,5.56x45mm M855A1,0,0,0,0,0,Unknown,nan,0,7
+13,5.56x45mm M995,0,0,0,0,0,Unknown,nan,0,7
+14,7.62x39mm HP,0,0,0,0,0,Unknown,nan,0,6
+15,7.62x39mm LP,0,0,0,0,0,Unknown,nan,0,6
+16,7.62x39mm US,0,0,2,9.2,300,Low,nan,0,6
+17,7.62x39mm T45M,0,0,0,0,0,Unknown,nan,0,6
+18,7.62x39mm PS,0,0,3,13.1,700,Low,nan,0,6
+19,7.62x39mm BP,0,0,0,0,0,Unknown,nan,0,6
+20,7.62x39mm AP,0,0,0,0,0,Unknown,nan,0,6
+21,7.62x51mm UN,0,0,0,0,0,Unknown,nan,0,8
+22,7.62x51mm BPZ,0,0,0,0,0,Unknown,nan,0,8
+23,7.62x51mm M80,0,0,0,0,0,Unknown,nan,0,8
+24,7.62x51mm M62,0,0,0,0,0,Unknown,nan,0,8
+25,7.62x51mm M61,0,0,0,0,0,Unknown,nan,0,8
+26,7.62x54mm LPS,0,0,0,0,0,Unknown,nan,0,12
+27,7.62x54mm T46M,0,0,0,0,0,Unknown,nan,0,12
+28,7.62x54mm SNB,0,0,0,0,0,Unknown,nan,0,12
+29,7.62x54mm 7BT1,0,0,0,0,0,Unknown,nan,0,12
+30,7.62x54mm 7N37,0,0,0,0,0,Unknown,nan,0,12
+31,5.8x42mm DBP87 Ammunition,0,0,0,0,0,Unknown,nan,0,10
+32,5.8x42mm DVP88 Ammunition,0,0,0,0,0,Unknown,nan,0,10
+33,5.8x42mm DVC12 Ammunition,0,0,0,0,0,Unknown,nan,0,10
+34,.338 UPZ,0,0,0,0,0,Unknown,nan,0,14
+35,.338 FMJ,0,0,0,0,0,Unknown,nan,0,14
+36,.338 AP,0,0,0,0,0,Unknown,nan,0,14
+37,.44 LFNP,0,0,0,0,0,Unknown,nan,0,2
+38,.44 SJHP,0,0,0,0,0,Unknown,nan,0,2
+39,.44 JSP,0,0,0,0,0,Unknown,nan,0,2
+40,.45 HS,0,0,0,0,0,Unknown,nan,0,4
+41,.45 FMJ,0,0,0,0,0,Unknown,nan,0,4
+42,.45 AP,0,0,0,0,0,Unknown,nan,0,4
+43,7.62x25mm PT,0,0,0,0,0,Unknown,nan,0,3
+44,7.62x25mm Pst,0,0,0,0,0,Unknown,nan,0,3
+45,7.62x25mm LRN,0,0,0,0,0,Unknown,nan,0,3
+46,7.62x25mm AKBS,0,0,0,0,0,Unknown,nan,0,3
+47,9x19mm PSO,0,0,1,5.8,340,Medium,nan,0,1
+48,9x19mm Pst,0,0,0,0,0,Unknown,nan,0,1
+49,9x19mm AP6.3,0,0,0,0,0,Unknown,nan,0,1
+50,9x19mm DumDum,0,0,0,0,0,Unknown,nan,0,1
+51,9x19mm 7N31,0,0,3,12,445,Low,Kayla,0,1
+52,12x70mm Type 5 Buckshot,0,0,0,0,0,Unknown,nan,0,11
+53,12x70mm Type 7 Buckshot,0,0,0,0,0,Unknown,nan,0,11
+54,12x70mm Type 8 Buckshot,0,0,0,0,0,Unknown,nan,0,11
+55,12x70mm Flechette Buckshot,0,0,0,0,0,Unknown,nan,0,11
+56,12x70mm Dual Shell,0,0,0,0,0,Unknown,nan,0,11
+57,12x70mm Led Slug,0,0,0,0,0,Unknown,nan,0,11
+58,12x70mm Grizzly Slug,0,0,0,0,0,Unknown,nan,0,11
+59,12x70mm RIP Slug,0,0,0,14.8,410,High,nan,0,11
+60,12x70mm GT Slug,0,0,0,0,0,Unknown,nan,0,11
+61,12x70mm Armor-Piercing Slug,0,0,0,0,0,Unknown,nan,0,11
+62,5.7x28mm R37.F,0,0,0,0,0,Unknown,nan,0,5
+63,5.7x28mm SS197SR,0,0,0,0,0,Unknown,nan,0,5
+64,5.7x28mm SS190,0,0,0,0,0,Unknown,nan,0,5
+65,5.7x28mm R37.X,0,0,0,0,0,Unknown,nan,0,5
+66,5.7x28mm L191,0,0,0,0,0,Unknown,nan,0,5
+67,5.7x28mm SS198,0,0,0,0,0,Unknown,nan,0,5
+68,9x39mm SP5,0,0,0,0,0,Unknown,nan,0,13
+69,9x39mm SP6,0,0,0,0,0,Unknown,nan,0,13
+70,9x39mm 7N9,0,0,0,0,0,Unknown,nan,0,13
+71,9x39mm 7N12,0,0,0,0,0,Unknown,nan,0,13
+72,12.7x99mm M2,0,0,0,0,0,Unknown,nan,0,15

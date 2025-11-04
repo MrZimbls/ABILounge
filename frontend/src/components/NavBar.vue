@@ -18,6 +18,10 @@ const navigateToWeapons = () => {
   router.push('/weapons')
 }
 
+const navigateToAmmunition = () => {
+  router.push('/ammunition')
+}
+
 const navigateToBuilds = () => {
   // router.push('/builds')
   console.log('Navigating to builds (not implemented yet)')
@@ -47,6 +51,14 @@ const navigateToAbout = () => {
           variant-="orange"
           :disabled="disabledButton === 'weapons'">
           Weapons
+        </button>
+        <button 
+          @click="navigateToAmmunition" 
+          class="button" 
+          size-="small" 
+          variant-="blue"
+          :disabled="disabledButton === 'ammunition'">
+          Ammunition
         </button>
         <button 
           @click="navigateToBuilds" 
@@ -93,6 +105,11 @@ const navigateToAbout = () => {
   display: flex;
   gap: 2ch;
   padding-left: 4ch;
+}
+
+.button-wrapper button:disabled {
+  text-decoration: underline !important;
+  font-weight: bold !important;
 }
 </style>
 

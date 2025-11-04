@@ -7,6 +7,10 @@ const navigateToWeapons = () => {
   router.push('/weapons')
 }
 
+const navigateToAmmunition = () => {
+  router.push('/ammunition')
+}
+
 const asciiArt = `
    █████╗ ██████╗ ██╗   ██╗      ██████╗ ██╗   ██╗███╗   ██╗ ██████╗ ███████╗  
   ██╔══██╗██╔══██╗██║   ██║     ██╔═══██╗██║   ██║████╗  ██║██╔════╝ ██╔════╝  
@@ -22,6 +26,7 @@ const asciiArt = `
     <pre class="ascii-art">{{ asciiArt }}</pre>
     <div class="button-wrapper">
       <button @click="navigateToWeapons" class="button" variant-="orange">Weapons</button>
+      <button @click="navigateToAmmunition" class="button" variant-="blue">Ammunition</button>
       <button @click="navigateToWeapons" class="button" variant-="purple">Builds</button>
       <button @click="navigateToWeapons" class="button" variant-="aqua">Kits</button>
       <button @click="navigateToWeapons" class="button" variant-="green">About</button>
