@@ -3,7 +3,7 @@
 # 
 # To use this:
 # 1. Go to Render Dashboard > New > Blueprint
-# 2. Connect your GitLab repository
+# 2. Connect your GitHub repository
 # 3. Render will automatically detect and use this file
 
 services:
@@ -31,7 +31,6 @@ services:
   - type: web
     name: abilounge-frontend
     env: static
-    region: oregon  # Change to your preferred region
     plan: free
     buildCommand: cd frontend && npm install && npm run build
     staticPublishPath: ./frontend/dist
