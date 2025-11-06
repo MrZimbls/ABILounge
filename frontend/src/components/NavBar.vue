@@ -1,5 +1,6 @@
 <script setup>
 import { useRouter } from 'vue-router'
+import { useAuth } from '../composables/useAuth.js'
 
 defineProps({
   disabledButton: {
@@ -9,6 +10,7 @@ defineProps({
 })
 
 const router = useRouter()
+const { logout } = useAuth()
 
 const navigateToLandingPage = () => {
   router.push('/')
@@ -23,8 +25,7 @@ const navigateToAmmunition = () => {
 }
 
 const navigateToBuilds = () => {
-  // router.push('/builds')
-  console.log('Navigating to builds (not implemented yet)')
+  router.push('/builds')
 }
 
 const navigateToKits = () => {
@@ -35,6 +36,11 @@ const navigateToKits = () => {
 const navigateToAbout = () => {
   // router.push('/about')
   console.log('Navigating to about (not implemented yet)')
+}
+
+const handleReauthenticate = () => {
+  logout()
+  router.push('/')
 }
 </script>
 
@@ -85,6 +91,15 @@ const navigateToAbout = () => {
           About
         </button>
       </div>
+      <div class="right-actions">
+        <button 
+          @click="handleReauthenticate" 
+          class="button" 
+          size-="small" 
+          variant-="red">
+          Re-authenticate
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -99,12 +114,20 @@ const navigateToAbout = () => {
   display: flex;
   align-items: center;
   gap: 1ch;
+  justify-content: space-between;
+  width: 100%;
 }
 
 .button-wrapper {
   display: flex;
   gap: 2ch;
   padding-left: 4ch;
+}
+
+.right-actions {
+  display: flex;
+  gap: 2ch;
+  margin-left: auto;
 }
 
 .button-wrapper button:disabled {

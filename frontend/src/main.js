@@ -8,6 +8,7 @@ import { createWebHistory, createRouter } from 'vue-router'
 import LandingPage from './pages/LandingPage.vue'
 import WeaponPage from './pages/WeaponPage.vue'
 import AmmunitionPage from './pages/AmmunitionPage.vue'
+import BuildsPage from './pages/BuildsPage.vue'
 import { useAuth } from './composables/useAuth.js'
 
 const routes = [
@@ -20,6 +21,11 @@ const routes = [
   { 
     path: '/ammunition', 
     component: AmmunitionPage,
+    meta: { requiresAuth: true, minRole: 'viewer' }
+  },
+  { 
+    path: '/builds', 
+    component: BuildsPage,
     meta: { requiresAuth: true, minRole: 'viewer' }
   },
 ]

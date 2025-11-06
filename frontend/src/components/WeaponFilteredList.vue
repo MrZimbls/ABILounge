@@ -1,8 +1,9 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import WeaponItem from './WeaponItem.vue'
-import { searchWeapons } from '@/api/weapons.js'
+import { searchWeapons, updateWeapon } from '@/api/weapons.js'
+import { useAuth } from '@/composables/useAuth.js'
 
 const props = defineProps({
   refreshTick: { type: Number, default: 0 },
@@ -10,6 +11,17 @@ const props = defineProps({
 
 const route = useRoute()
 const router = useRouter()
+
+// Authentication
+const { hasMinimumRole, user } = useAuth()
+const canEdit = computed(() => hasMinimumRole('developer'))
+
+// Edit dialog state
+const editDialog = ref(null)
+const editingWeapon = ref(null)
+const editFormData = reactive({})
+const isSaving = ref(false)
+const saveError = ref('')
 
 const loading = ref(false)
 const error = ref('')
@@ -25,6 +37,11 @@ const currentPage = computed(() => {
 })
 
 const numericKeys = ['vRecoil','hRecoil','ergo','wStab','accuracy','hfStab','range','velocity','rpm','price']
+
+const numericFields = [
+  'w_ergonomics', 'w_stability', 'w_accuracy', 'w_hipfire', 
+  'w_vrecoil', 'w_hrecoil', 'w_range', 'w_velocity', 'w_rpm', 'w_price'
+]
 
 const filters = computed(() => {
   const q = route.query
@@ -261,6 +278,135 @@ watch([filters, sortBy, sortDir], ([newFilters, newSortBy, newSortDir]) => {
 
 // Refresh when route query (filters/sort/page) or explicit refresh tick changes
 watch([() => route.query, () => props.refreshTick], () => { loadWeapons() }, { immediate: true, deep: true })
+
+// Edit functions
+function openEditDialog(weapon) {
+  editingWeapon.value = weapon
+  // Initialize form data with current weapon values
+  // Exclude nested objects and only include direct properties
+  Object.keys(weapon).forEach(key => {
+    if (typeof weapon[key] !== 'object') {
+      editFormData[key] = weapon[key] ?? ''
+    }
+  })
+  saveError.value = ''
+  if (editDialog.value) {
+    editDialog.value.showModal()
+  }
+}
+
+function closeEditDialog() {
+  if (editDialog.value) {
+    editDialog.value.close()
+  }
+  editingWeapon.value = null
+  Object.keys(editFormData).forEach(key => delete editFormData[key])
+  saveError.value = ''
+}
+
+async function saveEdit() {
+  const weaponId = editingWeapon.value?.w_id || editingWeapon.value?.id
+  if (!editingWeapon.value || !weaponId) {
+    saveError.value = 'Invalid weapon to edit'
+    return
+  }
+
+  isSaving.value = true
+  saveError.value = ''
+
+  try {
+    const token = user.value?.code
+    if (!token) {
+      throw new Error('Authentication required')
+    }
+
+    // Prepare update data (exclude id fields and nested objects)
+    const updateData = {}
+    const numericFields = [
+      'w_ergonomics', 'w_stability', 'w_accuracy', 'w_hipfire', 
+      'w_vrecoil', 'w_hrecoil', 'w_range', 'w_velocity', 'w_rpm', 'w_price'
+    ]
+    
+    Object.keys(editFormData).forEach(key => {
+      if (key !== 'id' && key !== 'w_id' && typeof editFormData[key] !== 'object') {
+        const value = editFormData[key]
+        
+        if (value === '' || value === null || value === undefined) {
+          // Convert empty values to null for numeric fields, empty string for text fields
+          if (numericFields.includes(key)) {
+            updateData[key] = null
+          } else {
+            updateData[key] = ''
+          }
+        } else if (numericFields.includes(key)) {
+          // Convert to number for numeric fields
+          const numValue = Number(value)
+          updateData[key] = !isNaN(numValue) ? numValue : null
+        } else {
+          // Keep as string for text fields
+          updateData[key] = String(value)
+        }
+      }
+    })
+
+    await updateWeapon(weaponId, updateData, { token })
+    
+    // Reload the data
+    await loadWeapons()
+    
+    // Update selected weapon if it was the one being edited
+    const selectedId = selectedWeapon.value?.w_id || selectedWeapon.value?.id
+    if (selectedWeapon.value && selectedId === weaponId) {
+      const updated = weapons.value.find(w => (w.w_id || w.id) === weaponId)
+      if (updated) {
+        selectedWeapon.value = updated
+      }
+    }
+    
+    closeEditDialog()
+  } catch (e) {
+    saveError.value = String(e?.message || e || 'Failed to save changes')
+  } finally {
+    isSaving.value = false
+  }
+}
+
+// Get all editable fields from weapon
+const editableFields = computed(() => {
+  if (!editingWeapon.value) return []
+  const fields = []
+  const excludeKeys = new Set(['id', 'w_id'])
+  
+  // Get all keys from the weapon object
+  for (const key of Object.keys(editingWeapon.value)) {
+    if (excludeKeys.has(key)) continue
+    if (typeof editingWeapon.value[key] === 'object') continue
+    fields.push(key)
+  }
+  
+  // Sort fields in a logical order
+  const fieldOrder = [
+    'w_name', 'w_type', 'w_firing_modes', 'caliber', 'manufacturer',
+    'w_ergonomics', 'w_stability', 'w_accuracy', 'w_hipfire', 
+    'w_vrecoil', 'w_hrecoil', 'w_range', 'w_velocity', 'w_rpm', 'w_price'
+  ]
+  
+  const ordered = []
+  for (const key of fieldOrder) {
+    if (fields.includes(key)) {
+      ordered.push(key)
+    }
+  }
+  
+  // Add any remaining fields
+  for (const key of fields) {
+    if (!ordered.includes(key)) {
+      ordered.push(key)
+    }
+  }
+  
+  return ordered
+})
 </script>
 
 <template>
@@ -301,6 +447,16 @@ watch([() => route.query, () => props.refreshTick], () => { loadWeapons() }, { i
         <div box-="round" class="paneBox">
           <div v-if="!selectedWeapon">Select a weapon to view details</div>
           <div v-else class="details">
+            <div v-if="canEdit" class="editButtonContainer">
+              <button 
+                @click="openEditDialog(selectedWeapon)"
+                size-="small"
+                variant-="blue"
+                class="editButton"
+              >
+                Edit
+              </button>
+            </div>
             <div class="treeList">
               <details v-for="cat in categorizedDetails" :key="cat.name" open class="treeGroup">
                 <summary class="treeSummary">{{ cat.name }}</summary>
@@ -323,6 +479,61 @@ watch([() => route.query, () => props.refreshTick], () => { loadWeapons() }, { i
       </div>
     </div>
   </div>
+
+  <!-- Edit Dialog -->
+  <dialog 
+    ref="editDialog" 
+    position-="center start" 
+    container-="auto"
+    class="edit-dialog"
+  >
+    <div class="dialog-content">
+      <h2 class="dialog-title">Edit Weapon</h2>
+      
+      <div v-if="editingWeapon" class="edit-form">
+        <div 
+          v-for="field in editableFields" 
+          :key="field"
+          class="form-field"
+        >
+          <label :for="`edit-${field}`" class="form-label">
+            {{ prettifyLabel(field) }}:
+          </label>
+            <input
+              :id="`edit-${field}`"
+              v-model="editFormData[field]"
+              :type="numericFields.includes(field) ? 'number' : 'text'"
+              :disabled="field === 'id' || field === 'w_id'"
+              :placeholder="String(editingWeapon[field] || '')"
+              size-="small"
+            />
+        </div>
+      </div>
+
+      <div v-if="saveError" class="error-message">
+        {{ saveError }}
+      </div>
+
+      <div class="dialog-buttons">
+        <button 
+          @click="closeEditDialog"
+          :disabled="isSaving"
+          variant-="blue"
+          size-="small"
+        >
+          Cancel
+        </button>
+        <button 
+          @click="saveEdit" 
+          :disabled="isSaving"
+          variant-="red"
+          size-="small"
+        >
+          {{ isSaving ? 'Saving...' : 'Save' }}
+        </button>
+      </div>
+    </div>
+  </dialog>
 </template>
 
 <style scoped>
@@ -409,6 +620,107 @@ watch([() => route.query, () => props.refreshTick], () => { loadWeapons() }, { i
 }
 .treeItemValue { gap: 0.75ch; }
 .statNumber { min-width: 4ch; text-align: right; opacity: 0.9; }
+
+.editButtonContainer {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.editButton {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.9em;
+}
+
+/* Edit Dialog Styles */
+:deep(.edit-dialog::backdrop) {
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+:deep(.edit-dialog) {
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.edit-dialog .dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 2rem 2ch;
+  max-width: 80ch;
+  max-height: 85vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.dialog-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.3em;
+  font-weight: bold;
+  color: var(--foreground1);
+  border-bottom: 1px solid var(--foreground2);
+  padding-bottom: 0.75rem;
+}
+
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 0.5rem 0;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: row;
+  gap: 1.5rem;
+  align-items: center;
+  padding: 0.5rem 0;
+}
+
+.form-label {
+  font-weight: 600;
+  font-size: 0.9em;
+  width: 18ch;
+  flex-shrink: 0;
+}
+
+.form-field input {
+  flex: 1;
+  min-width: 20ch;
+}
+
+/* Hide number input arrows (spinners) */
+.form-field input[type="number"]::-webkit-outer-spin-button,
+.form-field input[type="number"]::-webkit-inner-spin-button {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+}
+.form-field input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.dialog-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--foreground2);
+}
+
+.error-message {
+  color: var(--red);
+  padding: 0.75rem 1rem;
+  background-color: var(--background0);
+  border: 1px solid var(--red);
+  border-radius: 4px;
+  margin: 0.5rem 0;
+}
 </style>
 
 

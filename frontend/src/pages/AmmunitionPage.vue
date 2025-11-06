@@ -1,11 +1,23 @@
 <script setup>
 import { ref, computed, onMounted, reactive } from 'vue'
 import NavBar from '../components/NavBar.vue'
-import { listAmmunitionTypes } from '../api/weapons.js'
+import { listAmmunitionTypes, updateAmmunitionType } from '../api/weapons.js'
+import { useAuth } from '../composables/useAuth.js'
 
 const loading = ref(true)
 const errorMessage = ref('')
 const rawRows = ref([])
+
+// Authentication
+const { hasMinimumRole, user } = useAuth()
+const canEdit = computed(() => hasMinimumRole('developer'))
+
+// Edit dialog state
+const editDialog = ref(null)
+const editingItem = ref(null)
+const editFormData = reactive({})
+const isSaving = ref(false)
+const saveError = ref('')
 
 // Filter configurations
 const filterConfigs = [
@@ -76,7 +88,22 @@ const allColumns = computed(() => {
 const columnChecks = ref({})
 const displayedColumns = computed(() => allColumns.value.filter(c => columnChecks.value[c]))
 
-// Unique calibers from joined relation OR at_caliber
+// Unique calibers with IDs and names from joined relation (for edit dialog)
+const allCalibersWithIds = computed(() => {
+  const map = new Map()
+  for (const r of rawRows.value) {
+    if (r?.t_ammunition?.a_id && r?.t_ammunition?.a_caliber) {
+      const id = r.t_ammunition.a_id
+      const name = r.t_ammunition.a_caliber
+      if (!map.has(id)) {
+        map.set(id, { id, name })
+      }
+    }
+  }
+  return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name))
+})
+
+// Unique calibers from joined relation OR at_caliber (for filter)
 const allCalibers = computed(() => {
   const set = new Set()
   for (const r of rawRows.value) {
@@ -265,6 +292,99 @@ const displayedRows = computed(() => {
   return rows
 })
 
+// Edit functions
+function openEditDialog(row) {
+  editingItem.value = row
+  // Initialize form data with current row values
+  // Exclude nested objects and only include direct properties
+  Object.keys(row).forEach(key => {
+    if (key !== 't_ammunition' && typeof row[key] !== 'object') {
+      editFormData[key] = row[key] ?? ''
+    }
+  })
+  // Handle caliber ID from joined relation - use a_id (caliber ID) if available
+  // at_caliber should be the ID (foreign key), not the name
+  if (row?.t_ammunition?.a_id) {
+    editFormData.at_caliber = row.t_ammunition.a_id
+  } else if (!editFormData.at_caliber) {
+    // Fallback: if at_caliber exists but no joined relation, keep it as is
+    editFormData.at_caliber = editFormData.at_caliber ?? ''
+  }
+  saveError.value = ''
+  if (editDialog.value) {
+    editDialog.value.showModal()
+  }
+}
+
+function closeEditDialog() {
+  if (editDialog.value) {
+    editDialog.value.close()
+  }
+  editingItem.value = null
+  Object.keys(editFormData).forEach(key => delete editFormData[key])
+  saveError.value = ''
+}
+
+async function saveEdit() {
+  if (!editingItem.value || !editingItem.value.at_id) {
+    saveError.value = 'Invalid item to edit'
+    return
+  }
+
+  isSaving.value = true
+  saveError.value = ''
+
+  try {
+    const token = user.value?.code
+    if (!token) {
+      throw new Error('Authentication required')
+    }
+
+    // Prepare update data (exclude at_id and nested objects)
+    const updateData = {}
+    const numericFields = ['at_damage', 'at_penetration', 'at_pierce', 'at_armor_damage', 'at_velocity', 'at_price']
+    const idFields = ['at_caliber'] // Foreign key fields that should be numbers
+    
+    Object.keys(editFormData).forEach(key => {
+      if (key !== 'at_id' && typeof editFormData[key] !== 'object') {
+        const value = editFormData[key]
+        
+        if (value === '' || value === null || value === undefined) {
+          // Convert empty values to null for numeric/ID fields, empty string for text fields
+          if (numericFields.includes(key) || idFields.includes(key)) {
+            updateData[key] = null
+          } else {
+            updateData[key] = ''
+          }
+        } else if (numericFields.includes(key)) {
+          // Convert to number for numeric fields
+          const numValue = Number(value)
+          updateData[key] = !isNaN(numValue) ? numValue : null
+        } else if (idFields.includes(key)) {
+          // Convert to number for ID/foreign key fields
+          const numValue = Number(value)
+          updateData[key] = !isNaN(numValue) ? numValue : null
+        } else {
+          // Keep as string for text fields
+          updateData[key] = String(value)
+        }
+      }
+    })
+
+    await updateAmmunitionType(editingItem.value.at_id, updateData, { token })
+    
+    // Reload the data
+    const { data } = await listAmmunitionTypes({ token })
+    rawRows.value = Array.isArray(data) ? data : []
+    
+    closeEditDialog()
+  } catch (e) {
+    saveError.value = String(e?.message || e || 'Failed to save changes')
+  } finally {
+    isSaving.value = false
+  }
+}
+
 onMounted(async () => {
   try {
     const { data } = await listAmmunitionTypes()
@@ -400,12 +520,23 @@ onMounted(async () => {
                   <span>{{ COLUMN_LABELS[col] || col }}</span>
                   <span v-if="sortKey === col" class="sortDir">{{ sortDir === 'asc' ? '▲' : '▼' }}</span>
                 </th>
+                <th v-if="canEdit" class="editColumn">Actions</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="row in displayedRows" :key="row.id || row.a_id || JSON.stringify(row)">
+              <tr v-for="row in displayedRows" :key="row.id || row.at_id || JSON.stringify(row)">
                 <td v-for="col in displayedColumns" :key="col">
                   {{ getCellValue(row, col) }}
+                </td>
+                <td v-if="canEdit" class="editColumn">
+                  <button 
+                    @click="openEditDialog(row)"
+                    size-="small"
+                    variant-="blue"
+                    class="editButton"
+                  >
+                    Edit
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -413,6 +544,82 @@ onMounted(async () => {
         </div>
       </div>
     </div>
+
+    <!-- Edit Dialog -->
+    <dialog 
+      ref="editDialog" 
+      position-="center start" 
+      container-="auto"
+      class="edit-dialog"
+    >
+      <div class="dialog-content">
+        <h2 class="dialog-title">Edit Ammunition Type</h2>
+        
+        <div v-if="editingItem" class="edit-form">
+          <div 
+            v-for="col in allColumns" 
+            :key="col"
+            class="form-field"
+            v-show="col !== 'caliber'"
+          >
+            <label :for="`edit-${col}`" class="form-label">
+              {{ COLUMN_LABELS[col] || col }}:
+            </label>
+            <select
+              v-if="col === 'at_caliber'"
+              :id="`edit-${col}`"
+              v-model="editFormData[col]"
+              size-="small"
+            >
+              <option value="">-- Select Caliber --</option>
+              <option v-for="caliber in allCalibersWithIds" :key="caliber.id" :value="caliber.id">
+                {{ caliber.name }}
+              </option>
+            </select>
+            <input
+              v-else-if="['at_id', 'at_name', 'at_seller', 'at_wound'].includes(col)"
+              :id="`edit-${col}`"
+              v-model="editFormData[col]"
+              type="text"
+              :disabled="col === 'at_id'"
+              :placeholder="String(getCellValue(editingItem, col) || '')"
+              size-="small"
+            />
+            <input
+              v-else
+              :id="`edit-${col}`"
+              v-model.number="editFormData[col]"
+              type="number"
+              :placeholder="String(getCellValue(editingItem, col) || '')"
+              size-="small"
+            />
+          </div>
+        </div>
+
+        <div v-if="saveError" class="error-message">
+          {{ saveError }}
+        </div>
+
+        <div class="dialog-buttons">
+          <button 
+            @click="closeEditDialog"
+            :disabled="isSaving"
+            variant-="blue"
+            size-="small"
+          >
+            Cancel
+          </button>
+          <button 
+            @click="saveEdit" 
+            :disabled="isSaving"
+            variant-="red"
+            size-="small"
+          >
+            {{ isSaving ? 'Saving...' : 'Save' }}
+          </button>
+        </div>
+      </div>
+    </dialog>
   </div>
 </template>
 
@@ -568,6 +775,108 @@ input.conflict {
 .caliberSearchInput {
   width: 100%;
   min-width: 20ch;
+}
+
+.editColumn {
+  width: 1%;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.editButton {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.9em;
+}
+
+/* Edit Dialog Styles */
+:deep(.edit-dialog::backdrop) {
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+:deep(.edit-dialog) {
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.edit-dialog .dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 2rem 2ch;
+  max-width: 80ch;
+  max-height: 85vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.dialog-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.3em;
+  font-weight: bold;
+  color: var(--foreground1);
+  border-bottom: 1px solid var(--foreground2);
+  padding-bottom: 0.75rem;
+}
+
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 0.5rem 0;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: row;
+  gap: 1.5rem;
+  align-items: center;
+  padding: 0.5rem 0;
+}
+
+.form-label {
+  font-weight: 600;
+  font-size: 0.9em;
+  width: 12ch;
+  flex-shrink: 0;
+}
+
+.form-field input,
+.form-field select {
+  flex: 1;
+  min-width: 20ch;
+}
+
+/* Hide number input arrows (spinners) */
+.form-field input[type="number"]::-webkit-outer-spin-button,
+.form-field input[type="number"]::-webkit-inner-spin-button {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+}
+.form-field input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.dialog-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--foreground2);
+}
+
+.error-message {
+  color: var(--red);
+  padding: 0.75rem 1rem;
+  background-color: var(--background0);
+  border: 1px solid var(--red);
+  border-radius: 4px;
+  margin: 0.5rem 0;
 }
 </style>
 
